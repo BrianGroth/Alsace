@@ -208,11 +208,13 @@
     .activities li.meal { border-left: 4px solid #ff8a65; }
     .activities li.flight { border-left: 4px solid #4fc3f7; }
     .activities li.adventure { border-left: 4px solid #81c784; }
+    .activities li.train { border-left: 4px solid #ffa500; }
     
     .activities li.hotel::before { content: "💤 "; }
     .activities li.meal::before { content: "🍽️ "; }
     .activities li.flight::before { content: "✈️ "; }
     .activities li.adventure::before { content: "🌍 "; }
+    .activities li.train::before { content: "🚆 "; }
     
     .time {
       font-weight: bold;
@@ -314,7 +316,8 @@
 </header>
 
 <div class="tabs">
-  <div class="tab" data-tab="Aerdenhout1" data-city="Aerdenhout, Netherlands">
+  <!-- Default active tab -->
+  <div class="tab active" data-tab="Aerdenhout1" data-city="Aerdenhout, Netherlands">
     <i class="fas fa-city"></i>
     <span>Aerdenhout (Apr 22-24)</span>
   </div>
@@ -329,7 +332,7 @@
 </div>
 
 <!-- Aerdenhout Content (First Leg) -->
-<div class="content" id="Aerdenhout1">
+<div class="content active" id="Aerdenhout1">
   <div class="tab-image">
     <img src="Aerdenhout1.png" alt="Aerdenhout Skyline">
     <div class="location-title">Aerdenhout, Netherlands</div>
@@ -339,35 +342,35 @@
     <div class="day">
       <h3>Tuesday, April 22</h3>
       <ul class="activities">
-        <li class="adventure"><span class="time">Arrival</span>Welcome to the Europe</li>
-        <li class="adventure"><span class="time">Arrival</span>Welcome to the Netherlands</li>
-        <li class="meal"><span class="time">Evening</span>Dinner</li>
+        <li class="adventure"><span class="time">Arrival</span> - Welcome to Europe</li>
+        <li class="adventure"><span class="time">Arrival</span> - Welcome to the Netherlands</li>
+        <li class="meal"><span class="time">Evening</span> - Dinner</li>
       </ul>
     </div>
     
     <div class="day">
       <h3>Wednesday, April 23</h3>
       <ul class="activities">
-        <li class="adventure"><span class="time">10:00</span>Tulips?</li>
-        <li class="adventure"><span class="time">15:00</span>Haarlem</li>
+        <li class="adventure"><span class="time">10:00</span> - Tulips?</li>
+        <li class="adventure"><span class="time">15:00</span> - Haarlem</li>
       </ul>
     </div>
     
     <div class="day">
       <h3>Thursday, April 24</h3>
       <ul class="activities">
-        <li class="adventure"><span class="time">09:00</span>Brian's Electric Bike Tour?</li>
-        <li class="adventure"><span class="time">15:00</span>Haarlem</li>
+        <li class="adventure"><span class="time">09:00</span> - Brian's Electric Bike Tour?</li>
+        <li class="adventure"><span class="time">15:00</span> - Haarlem</li>
       </ul>
     </div>
     
     <div class="day">
-        <h3 class="hotel">B&B</h3>
-        <div class="hotel-details">
-          <div class="hotel-name">Aerdenhout Private & Boutique B&B</div>
-          <div class="hotel-address"><a href="#">Bentveldsweg 124, 2111 EE Aerdenhout, NL</a></div>
-        </div>
-     </div>
+      <h3 class="hotel">B&amp;B</h3>
+      <div class="hotel-details">
+        <div class="hotel-name">Aerdenhout Private &amp; Boutique B&amp;B</div>
+        <div class="hotel-address"><a href="#">Bentveldsweg 124, 2111 EE Aerdenhout, NL</a></div>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -382,48 +385,46 @@
     <div class="day">
       <h3>Thursday, April 24</h3>
       <ul class="activities">
-        <li class="adventure"><span class="time">9:27</span>Train from Schiphol to Paris Gare du Nord</li>
-        <li class="meal"><span class="time">14:00</span>Lunch on the train</li>
-        <li class="adventure"><span class="time">13:54</span>Train from Paris Gare de l'Est to Colmar</li>
-        <li class="meal"><span class="time">14:00</span>Dinner in Colmar</li>
+        <li class="train"><span class="time">9:27</span> - Train from Schiphol to Paris Gare du Nord</li>
+        <li class="meal"><span class="time">14:00</span> - Lunch on the train</li>
+        <li class="train"><span class="time">13:54</span> - Train from Paris Gare de l'Est to Colmar</li>
+        <li class="meal"><span class="time">14:00</span> - Dinner in Colmar</li>
       </ul>
     </div>
     
     <div class="day">
       <h3>Friday, April 25</h3>
       <ul class="activities">
-        <li class="adventure"><span class="time">11:00</span>Visit stuff...</li>
-        <li class="meal"><span class="time">14:00</span>Eat stuff...</li>
+        <li class="adventure"><span class="time">11:00</span> - Visit stuff...</li>
+        <li class="meal"><span class="time">14:00</span> - Eat stuff...</li>
       </ul>
     </div>
     
     <div class="day">
       <h3>Saturday, April 26</h3>
       <ul class="activities">
-        <li class="adventure"><span class="time">11:00</span>Visit stuff...</li>
-        <li class="meal"><span class="time">14:00</span>Eat stuff...</li>
+        <li class="adventure"><span class="time">11:00</span> - Visit stuff...</li>
+        <li class="meal"><span class="time">14:00</span> - Eat stuff...</li>
       </ul>
     </div>
     
     <div class="day">
       <h3>Sunday, April 27</h3>
       <ul class="activities">
-        <li class="adventure"><span class="time">11:00</span>Visit stuff...</li>
-        <li class="meal"><span class="time">14:00</span>Eat stuff...</li>
+        <li class="adventure"><span class="time">11:00</span> - Visit stuff...</li>
+        <li class="meal"><span class="time">14:00</span> - Eat stuff...</li>
       </ul>
     </div>
     
-    <div class="itinerary">
-        <div class="day">
-          <h3>Monday, April 28</h3>
-          <ul class="activities">
-            <li class="adventure"><span class="time">14:15</span>Train from Colmar to Paris Gare de l'Est</li>
-            <li class="adventure"><span class="time">18:@5</span>Train from Paris Gare du Nord to Schiphol</li>
-            <li class="meal"><span class="time">13:00</span>Dinner on the train</li>
-            <li class="adventure"><span class="time">21:33</span>Taxi to Aerdenhout</li>
-          </ul>
-        </div>
-    
+    <div class="day">
+      <h3>Monday, April 28</h3>
+      <ul class="activities">
+        <li class="train"><span class="time">14:15</span> - Train from Colmar to Paris Gare de l'Est</li>
+        <li class="train"><span class="time">18:05</span> - Train from Paris Gare du Nord to Schiphol</li>
+        <li class="meal"><span class="time">13:00</span> - Dinner on the train</li>
+        <li class="adventure"><span class="time">21:33</span> - Taxi to Aerdenhout</li>
+      </ul>
+    </div>
     
     <div class="day">
       <h3 class="hotel">Hotel</h3>
@@ -443,25 +444,25 @@
     <div class="location-title">Aerdenhout, Netherlands</div>
   </div>
   
-    
+  <div class="itinerary">
     <div class="day">
       <h3>Tuesday, April 29</h3>
       <ul class="activities">
-        <li class="adventure"><span class="time">10:00</span>Tulips?</li>
+        <li class="adventure"><span class="time">10:00</span> - Tulips?</li>
       </ul>
     </div>
     
     <div class="day">
       <h3>Wednesday, April 30</h3>
       <ul class="activities">
-        <li class="flight"><span class="time">8:00</span>Departure from Aerdenhout to Schiphol</li>
+        <li class="flight"><span class="time">8:00</span> - Departure from Aerdenhout to Schiphol</li>
       </ul>
     </div>
     
     <div class="day">
-      <h3 class="hotel">B&B</h3>
+      <h3 class="hotel">B&amp;B</h3>
       <div class="hotel-details">
-        <div class="hotel-name">Aerdenhout Private & Boutique B&B</div>
+        <div class="hotel-name">Aerdenhout Private &amp; Boutique B&amp;B</div>
         <div class="hotel-address"><a href="#">Bentveldsweg 124, 2111 EE Aerdenhout, NL</a></div>
       </div>
     </div>
@@ -488,8 +489,6 @@
 
   tabs.forEach(tab => {
     tab.addEventListener('click', () => {
-      const cityName = tab.dataset.city;
-      
       tabs.forEach(t => t.classList.remove('active'));
       contents.forEach(c => c.classList.remove('active'));
 
