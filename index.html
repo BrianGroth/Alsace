@@ -39,7 +39,8 @@
     }
     
     header {
-      background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+      /* Updated gradient to fade from red to yellow */
+      background: linear-gradient(135deg, red, yellow);
       color: var(--white);
       padding: 5px;
       text-align: center;
@@ -85,6 +86,11 @@
       color: var(--dark-text);
       position: relative;
       overflow: hidden;
+    }
+    
+    /* Use a tulip emoji for Aerdenhout tabs */
+    .tab.tulip-icon {
+      font-size: 1.2em;
     }
     
     .tab i {
@@ -214,6 +220,7 @@
     .activities li.meal::before { content: "🍽️ "; }
     .activities li.flight::before { content: "✈️ "; }
     .activities li.adventure::before { content: "🌍 "; }
+    /* Updated train emoji to a different one */
     .activities li.train::before { content: "🚆 "; }
     
     .time {
@@ -316,17 +323,17 @@
 </header>
 
 <div class="tabs">
-  <!-- Default active tab -->
-  <div class="tab active" data-tab="Aerdenhout1" data-city="Aerdenhout, Netherlands">
-    <i class="fas fa-city"></i>
+  <!-- Default active tab with tulip emoji -->
+  <div class="tab active tulip-icon" data-tab="Aerdenhout1" data-city="Aerdenhout, Netherlands">
+    <span>🌷</span>
     <span>Aerdenhout (Apr 22-24)</span>
   </div>
   <div class="tab" data-tab="alsace" data-city="Alsace, France">
     <i class="fas fa-map"></i>
     <span>Alsace (Apr 24-28)</span>
   </div>
-  <div class="tab" data-tab="Aerdenhout2" data-city="Aerdenhout, Netherlands">
-    <i class="fas fa-city"></i>
+  <div class="tab tulip-icon" data-tab="Aerdenhout2" data-city="Aerdenhout, Netherlands">
+    <span>🌷</span>
     <span>Aerdenhout (Apr 28-30)</span>
   </div>
 </div>
