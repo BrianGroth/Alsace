@@ -314,25 +314,25 @@
 </header>
 
 <div class="tabs">
-  <div class="tab" data-tab="amsterdam1" data-city="Amsterdam, Netherlands">
+  <div class="tab" data-tab="Aerdenhout1" data-city="Aerdenhout, Netherlands">
     <i class="fas fa-city"></i>
-    <span>Amsterdam (Apr 22-24)</span>
+    <span>Aerdenhout (Apr 22-24)</span>
   </div>
   <div class="tab" data-tab="alsace" data-city="Alsace, France">
     <i class="fas fa-map"></i>
     <span>Alsace (Apr 24-28)</span>
   </div>
-  <div class="tab" data-tab="amsterdam2" data-city="Amsterdam, Netherlands">
+  <div class="tab" data-tab="Aerdenhout2" data-city="Aerdenhout, Netherlands">
     <i class="fas fa-city"></i>
-    <span>Amsterdam (Apr 28-30)</span>
+    <span>Aerdenhout (Apr 28-30)</span>
   </div>
 </div>
 
-<!-- Amsterdam Content (First Leg) -->
-<div class="content" id="amsterdam1">
+<!-- Aerdenhout Content (First Leg) -->
+<div class="content" id="Aerdenhout1">
   <div class="tab-image">
-    <img src="Amsterdam1.png" alt="Amsterdam Skyline">
-    <div class="location-title">Amsterdam, Netherlands</div>
+    <img src="Aerdenhout1.png" alt="Aerdenhout Skyline">
+    <div class="location-title">Aerdenhout, Netherlands</div>
   </div>
   
   <div class="itinerary">
@@ -365,8 +365,8 @@
     <div class="day">
       <h3 class="hotel">Hotel</h3>
       <div class="hotel-details">
-        <div class="hotel-name">Amsterdam Grand Hotel</div>
-        <div class="hotel-address"><a href="#">Central Amsterdam Address</a></div>
+        <div class="hotel-name">Aerdenhout Grand Hotel</div>
+        <div class="hotel-address"><a href="#">Central Aerdenhout Address</a></div>
         <div class="hotel-phone">+31 20 1234567</div>
       </div>
     </div>
@@ -376,7 +376,7 @@
 <!-- Alsace Content -->
 <div class="content" id="alsace">
   <div class="tab-image">
-    <img src="Alasace.png" alt="Alsace Vineyards">
+    <img src="Alsace.png" alt="Alsace Vineyards">
     <div class="location-title">Alsace, France</div>
   </div>
   
@@ -417,7 +417,7 @@
       <h3>Monday, April 28</h3>
       <ul class="activities">
         <li class="adventure"><span class="time">08:00</span> - Scenic drive &amp; market tour</li>
-        <li class="flight"><span class="time">16:00</span> - Depart for Amsterdam</li>
+        <li class="flight"><span class="time">16:00</span> - Depart for Aerdenhout</li>
       </ul>
     </div>
     
@@ -432,18 +432,18 @@
   </div>
 </div>
 
-<!-- Amsterdam Content (Second Leg) -->
-<div class="content" id="amsterdam2">
+<!-- Aerdenhout Content (Second Leg) -->
+<div class="content" id="Aerdenhout2">
   <div class="tab-image">
-    <img src="Amsterdam2.png" alt="Amsterdam Evening View">
-    <div class="location-title">Amsterdam, Netherlands</div>
+    <img src="Aerdenhout2.png" alt="Aerdenhout Evening View">
+    <div class="location-title">Aerdenhout, Netherlands</div>
   </div>
   
   <div class="itinerary">
     <div class="day">
       <h3>Monday, April 28</h3>
       <ul class="activities">
-        <li class="flight"><span class="time">Evening</span> - Arrive in Amsterdam and settle in</li>
+        <li class="flight"><span class="time">Evening</span> - Arrive in Aerdenhout and settle in</li>
       </ul>
     </div>
     
@@ -461,15 +461,15 @@
       <ul class="activities">
         <li class="adventure"><span class="time">09:00</span> - Bike tour of parks &amp; markets</li>
         <li class="meal"><span class="time">12:00</span> - Farewell brunch</li>
-        <li class="flight"><span class="time">15:00</span> - Departure from Amsterdam</li>
+        <li class="flight"><span class="time">15:00</span> - Departure from Aerdenhout</li>
       </ul>
     </div>
     
     <div class="day">
       <h3 class="hotel">Hotel</h3>
       <div class="hotel-details">
-        <div class="hotel-name">Amsterdam Boutique Hotel</div>
-        <div class="hotel-address"><a href="#">Amsterdam Central Address</a></div>
+        <div class="hotel-name">Aerdenhout Boutique Hotel</div>
+        <div class="hotel-address"><a href="#">Aerdenhout Central Address</a></div>
         <div class="hotel-phone">+31 20 7654321</div>
       </div>
     </div>
@@ -517,13 +517,13 @@
   document.addEventListener('DOMContentLoaded', () => {
     const savedTab = localStorage.getItem('activeTab');
     const now = new Date();
-    let defaultTab = "amsterdam1"; // default fallback
+    let defaultTab = "Aerdenhout1"; // default fallback
 
     if (now >= new Date("2025-04-24T00:00:00")) {
       defaultTab = "alsace";
     }
     if (now >= new Date("2025-04-28T00:00:00")) {
-      defaultTab = "amsterdam2";
+      defaultTab = "Aerdenhout2";
     }
 
     const tabToActivate = savedTab || defaultTab;
