@@ -39,7 +39,7 @@
     }
     
     header {
-      /* Updated gradient: dark red (#8B0000) to golden yellow (#FFD700) */
+      /* Gradient updated: dark red (#8B0000) to golden yellow (#FFD700) */
       background: linear-gradient(135deg, #8B0000, #FFD700);
       color: var(--white);
       padding: 5px;
@@ -88,8 +88,8 @@
       overflow: hidden;
     }
     
-    /* Use a tulip emoji for Aerdenhout tabs */
-    .tab.tulip-icon {
+    /* Ensure all tab icons have the same font size */
+    .tab > span:first-child {
       font-size: 1.2em;
     }
     
@@ -328,7 +328,7 @@
     <span>🌷</span>
     <span>Aerdenhout (Apr 22-24)</span>
   </div>
-  <!-- Alsace tab now uses a gingerbread-like icon (using a cookie emoji 🍪) -->
+  <!-- Alsace tab uses a gingerbread-like icon (using a cookie emoji 🍪) -->
   <div class="tab" data-tab="alsace" data-city="Alsace, France">
     <span>🍪</span>
     <span>Alsace (Apr 24-28)</span>
@@ -376,7 +376,9 @@
       <h3 class="hotel">B&amp;B</h3>
       <div class="hotel-details">
         <div class="hotel-name">Aerdenhout Private &amp; Boutique B&amp;B</div>
-        <div class="hotel-address"><a href="https://maps.app.goo.gl/MACs4AGy8Q4ojpGC8">Bentveldsweg 124, 2111 EE Aerdenhout, NL</a></div>
+        <div class="hotel-address">
+          <a href="https://maps.app.goo.gl/MACs4AGy8Q4ojpGC8">Bentveldsweg 124, 2111 EE Aerdenhout, NL</a>
+        </div>
       </div>
     </div>
   </div>
@@ -403,10 +405,22 @@
     <div class="day">
       <h3>Friday, April 25</h3>
       <ul class="activities">
-        <li class="adventure"><span class="time">9:00 - 17:00</span> - <a href="https://www.tourisme-colmar.com/en/">Colmar Tourism Office</a></li>
-        <li class="adventure"><span class="time">9:00 - 17:00</span> - <a href="https://maps.app.goo.gl/17WTPHz9zhR8RuMC7">Riquewihr: The most picturesque town in the region</a></li>
-        <li class="adventure"><span class="time">9:00 - 17:00</span> - <a href="https://maps.app.goo.gl/wEZgFrK571ZSd4Y7A">Eguisheim: Midevil half-timbered houses</a></li>
-        <li class="adventure"><span class="time">Mixed Hours</span> - <a href="https://maps.app.goo.gl/fLvKpy2LjA2Nrui18">Cave Vinicole de Hunawihr: Our favorite</a></li>
+        <li class="adventure">
+          <span class="time">9:00 - 17:00</span> - 
+          <a href="https://www.tourisme-colmar.com/en/">Colmar Tourism Office</a>
+        </li>
+        <li class="adventure">
+          <span class="time">9:00 - 17:00</span> - 
+          <a href="https://maps.app.goo.gl/17WTPHz9zhR8RuMC7">Riquewihr: The most picturesque town in the region</a>
+        </li>
+        <li class="adventure">
+          <span class="time">9:00 - 17:00</span> - 
+          <a href="https://maps.app.goo.gl/wEZgFrK571ZSd4Y7A">Eguisheim: Medieval half-timbered houses</a>
+        </li>
+        <li class="adventure">
+          <span class="time">Mixed Hours</span> - 
+          <a href="https://maps.app.goo.gl/fLvKpy2LjA2Nrui18">Cave Vinicole de Hunawihr: Our favorite</a>
+        </li>
         <li class="meal"><span class="time">All Day</span> - Eat stuff...</li>
       </ul>
     </div>
@@ -414,15 +428,20 @@
     <div class="day">
       <h3>Saturday, April 26</h3>
       <ul class="activities">
-        <li class="adventure"><span class="time">All Day</span>Mulhouse</li>
-        <li class="meal"><span class="time">10:00-17:00</span><a href"https://www.citedutrain.com/">Cité du Train - Patrimoine SNCF</a></li>
+        <li class="adventure"><span class="time">All Day</span> - Mulhouse</li>
+        <li class="meal"><span class="time">10:00-17:00</span> - 
+          <a href="https://www.citedutrain.com/">Cité du Train - Patrimoine SNCF</a>
+        </li>
       </ul>
     </div>
     
     <div class="day">
       <h3>Sunday, April 27</h3>
       <ul class="activities">
-        <li class="adventure"><span class="time">9:00 - 17:00</span> - <a href="https://www.tourisme-colmar.com/en/">Colmar Tourism Office</a></li>
+        <li class="adventure">
+          <span class="time">9:00 - 17:00</span> - 
+          <a href="https://www.tourisme-colmar.com/en/">Colmar Tourism Office</a>
+        </li>
         <li class="meal"><span class="time">14:00</span> - Eat stuff...</li>
       </ul>
     </div>
@@ -441,7 +460,9 @@
       <h3 class="hotel">Hotel</h3>
       <div class="hotel-details">
         <div class="hotel-name">Hotel le Colombier Colmar</div>
-        <div class="hotel-address"><a href="https://maps.app.goo.gl/r6fnmUwjtQ2gjdo46">7 Rue Turenne, 6800 Colmar</a></div>
+        <div class="hotel-address">
+          <a href="https://maps.app.goo.gl/r6fnmUwjtQ2gjdo46">7 Rue Turenne, 6800 Colmar</a>
+        </div>
         <div class="hotel-phone">+33 3 89 23 96 00</div>
       </div>
     </div>
@@ -474,7 +495,9 @@
       <h3 class="hotel">B&amp;B</h3>
       <div class="hotel-details">
         <div class="hotel-name">Aerdenhout Private &amp; Boutique B&amp;B</div>
-        <div class="hotel-address"><a href="https://maps.app.goo.gl/MACs4AGy8Q4ojpGC8">Bentveldsweg 124, 2111 EE Aerdenhout, NL</a></div>
+        <div class="hotel-address">
+          <a href="https://maps.app.goo.gl/MACs4AGy8Q4ojpGC8">Bentveldsweg 124, 2111 EE Aerdenhout, NL</a>
+        </div>
       </div>
     </div>
   </div>
@@ -549,6 +572,28 @@
       countdownElement.textContent = `Your adventure has concluded!`;
     }
   }
+
+  // Modify Google Maps links for mobile devices
+  function modifyMapLinks() {
+    const isAndroid = /Android/i.test(navigator.userAgent);
+    const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
+    if (isAndroid || isIOS) {
+      // Select anchors whose href includes "maps.app.goo.gl"
+      const mapLinks = document.querySelectorAll('a[href*="maps.app.goo.gl"]');
+      mapLinks.forEach(link => {
+        // Use the link's text (the address) to build a mobile-friendly URL.
+        const address = link.textContent.trim();
+        if (address) {
+          if (isAndroid) {
+            link.href = "geo:0,0?q=" + encodeURIComponent(address);
+          } else if (isIOS) {
+            link.href = "comgooglemaps://?q=" + encodeURIComponent(address);
+          }
+        }
+      });
+    }
+  }
+  document.addEventListener("DOMContentLoaded", modifyMapLinks);
 </script>
 </body>
 </html>
