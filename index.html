@@ -1,0 +1,556 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
+  <title>The Alsace 2025 Adventure</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+  <style>
+    :root {
+      --primary-color: #0077cc;
+      --secondary-color: #00a896;
+      --accent-color: #f4a261;
+      --light-bg: #f8f9fa;
+      --dark-text: #333;
+      --white: #ffffff;
+      --shadow: 0 4px 6px rgba(0,0,0,0.1);
+      --border-radius: 8px;
+      --transition: all 0.3s ease;
+    }
+    
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    
+    body {
+      font-family: 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+      line-height: 1.6;
+      color: var(--dark-text);
+      background-color: var(--light-bg);
+      font-size: 16px;
+      padding-bottom: 60px; /* Space for footer */
+      max-width: 800px;
+      margin: 0 auto;
+    }
+    
+    header {
+      background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+      color: var(--white);
+      padding: 5px;
+      text-align: center;
+      border-radius: 0 0 var(--border-radius) var(--border-radius);
+      margin-bottom: 5px;
+      box-shadow: var(--shadow);
+    }
+    
+    h1 {
+      margin: 0;
+      font-size: 1.2em;
+    }
+    
+    .subtitle {
+      font-style: italic;
+      margin-top: 5px;
+      opacity: 0.9;
+    }
+    
+    .tabs {
+      display: flex;
+      background-color: var(--white);
+      border-radius: var(--border-radius);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+      margin-bottom: 20px;
+      position: sticky;
+      top: 10px;
+      z-index: 100;
+    }
+    
+    .tab {
+      flex: 1;
+      padding: 15px 5px;
+      text-align: center;
+      cursor: pointer;
+      transition: var(--transition);
+      font-weight: 500;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      color: var(--dark-text);
+      position: relative;
+      overflow: hidden;
+    }
+    
+    .tab i {
+      font-size: 1.2em;
+      margin-bottom: 5px;
+    }
+    
+    .tab:hover {
+      background-color: rgba(0,0,0,0.05);
+    }
+    
+    .tab.active {
+      color: var(--primary-color);
+      background-color: var(--white);
+    }
+    
+    .tab.active::after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 3px;
+      background-color: var(--primary-color);
+    }
+    
+    .content {
+      display: none;
+      background-color: var(--white);
+      border-radius: var(--border-radius);
+      box-shadow: var(--shadow);
+      animation: fadeIn 0.3s ease-in-out;
+      padding: 0;
+      overflow: hidden;
+    }
+    
+    .content.active {
+      display: block;
+    }
+    
+    .tab-image {
+      position: relative;
+      height: 200px;
+      overflow: hidden;
+      background-color: #ddd;
+    }
+    
+    .tab-image img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      transition: transform 0.3s ease;
+    }
+    
+    .tab-image:hover img {
+      transform: scale(1.05);
+    }
+    
+    .location-title {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: linear-gradient(transparent, rgba(0,0,0,0.7));
+      color: white;
+      padding: 20px;
+      font-size: 1.5em;
+      font-weight: bold;
+    }
+    
+    .itinerary {
+      padding: 20px;
+    }
+    
+    .day {
+      margin-bottom: 25px;
+      border-bottom: 1px solid #eee;
+      padding-bottom: 15px;
+    }
+    
+    .day:last-child {
+      border-bottom: none;
+    }
+    
+    .day h3 {
+      margin: 0 0 15px;
+      color: var(--primary-color);
+      font-size: 1.2em;
+      display: flex;
+      align-items: center;
+    }
+    
+    .day h3::before {
+      content: '📅';
+      margin-right: 8px;
+    }
+    
+    .day h3.hotel::before {
+      content: '🏨';
+    }
+    
+    .activities {
+      list-style: none;
+    }
+    
+    .activities li {
+      padding: 10px 15px;
+      margin-bottom: 8px;
+      background-color: var(--light-bg);
+      border-radius: var(--border-radius);
+      transition: var(--transition);
+      position: relative;
+    }
+    
+    .activities li:hover {
+      transform: translateX(5px);
+      box-shadow: var(--shadow);
+    }
+    
+    .activities li.hotel { border-left: 4px solid #7986cb; }
+    .activities li.meal { border-left: 4px solid #ff8a65; }
+    .activities li.flight { border-left: 4px solid #4fc3f7; }
+    .activities li.adventure { border-left: 4px solid #81c784; }
+    
+    .activities li.hotel::before { content: "💤 "; }
+    .activities li.meal::before { content: "🍽️ "; }
+    .activities li.flight::before { content: "✈️ "; }
+    .activities li.adventure::before { content: "🌍 "; }
+    
+    .time {
+      font-weight: bold;
+      color: var(--primary-color);
+    }
+    
+    .hotel-details {
+      background-color: var(--light-bg);
+      padding: 15px;
+      border-radius: var(--border-radius);
+      margin-top: 10px;
+    }
+    
+    .hotel-name {
+      font-weight: bold;
+      font-size: 1.1em;
+      margin-bottom: 5px;
+      color: var(--primary-color);
+    }
+    
+    .hotel-address, .hotel-phone {
+      font-size: 0.9em;
+      margin-bottom: 5px;
+    }
+    
+    footer {
+      background-color: var(--white);
+      padding: 15px;
+      text-align: center;
+      font-size: 0.9em;
+      border-radius: var(--border-radius);
+      box-shadow: var(--shadow);
+      margin-top: 20px;
+    }
+    
+    footer p {
+      margin: 5px 0;
+    }
+    
+    footer a {
+      color: var(--primary-color);
+      text-decoration: none;
+      transition: var(--transition);
+    }
+    
+    footer a:hover {
+      color: var(--secondary-color);
+      text-decoration: underline;
+    }
+    
+    .footer-divider {
+      margin: 10px 0;
+      border: 0;
+      border-top: 1px solid #eee;
+    }
+    
+    .footer-links {
+      display: flex;
+      justify-content: center;
+      gap: 15px;
+      margin-top: 10px;
+    }
+    
+    .footer-link {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+    
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    
+    .countdown {
+      text-align: center;
+      margin: 1px 0;
+      font-weight: bold;
+      color: var(--accent-color);
+    }
+        
+    /* Responsive design */
+    @media (max-width: 600px) {
+      .tab span {
+        font-size: 0.9em;
+      }
+      
+      .location-title {
+        font-size: 1.2em;
+      }
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>The Alsace 2025 Adventure</h1>
+  <div class="countdown" id="countdown">Loading...</div>
+</header>
+
+<div class="tabs">
+  <div class="tab" data-tab="amsterdam1" data-city="Amsterdam, Netherlands">
+    <i class="fas fa-city"></i>
+    <span>Amsterdam (Apr 22-24)</span>
+  </div>
+  <div class="tab" data-tab="alsace" data-city="Alsace, France">
+    <i class="fas fa-map"></i>
+    <span>Alsace (Apr 24-28)</span>
+  </div>
+  <div class="tab" data-tab="amsterdam2" data-city="Amsterdam, Netherlands">
+    <i class="fas fa-city"></i>
+    <span>Amsterdam (Apr 28-30)</span>
+  </div>
+</div>
+
+<!-- Amsterdam Content (First Leg) -->
+<div class="content" id="amsterdam1">
+  <div class="tab-image">
+    <img src="Amsterdam1.png" alt="Amsterdam Skyline">
+    <div class="location-title">Amsterdam, Netherlands</div>
+  </div>
+  
+  <div class="itinerary">
+    <div class="day">
+      <h3>Tuesday, April 22</h3>
+      <ul class="activities">
+        <li class="adventure"><span class="time">Arrival</span> - Welcome and check-in at hotel</li>
+        <li class="meal"><span class="time">Evening</span> - Casual dinner at a local café</li>
+      </ul>
+    </div>
+    
+    <div class="day">
+      <h3>Wednesday, April 23</h3>
+      <ul class="activities">
+        <li class="adventure"><span class="time">10:00</span> - Guided city tour along the canals</li>
+        <li class="meal"><span class="time">13:00</span> - Lunch at a canal-side restaurant</li>
+        <li class="adventure"><span class="time">15:00</span> - Visit to a renowned museum</li>
+      </ul>
+    </div>
+    
+    <div class="day">
+      <h3>Thursday, April 24</h3>
+      <ul class="activities">
+        <li class="adventure"><span class="time">09:00</span> - Bike tour of the city</li>
+        <li class="meal"><span class="time">12:00</span> - Brunch at a local hotspot</li>
+        <li class="flight"><span class="time">17:00</span> - Depart for Alsace</li>
+      </ul>
+    </div>
+    
+    <div class="day">
+      <h3 class="hotel">Hotel</h3>
+      <div class="hotel-details">
+        <div class="hotel-name">Amsterdam Grand Hotel</div>
+        <div class="hotel-address"><a href="#">Central Amsterdam Address</a></div>
+        <div class="hotel-phone">+31 20 1234567</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Alsace Content -->
+<div class="content" id="alsace">
+  <div class="tab-image">
+    <img src="Alasace.png" alt="Alsace Vineyards">
+    <div class="location-title">Alsace, France</div>
+  </div>
+  
+  <div class="itinerary">
+    <div class="day">
+      <h3>Thursday, April 24</h3>
+      <ul class="activities">
+        <li class="flight"><span class="time">Morning</span> - Arrive in Alsace &amp; check-in</li>
+        <li class="meal"><span class="time">Afternoon</span> - Lunch at a local bistro</li>
+      </ul>
+    </div>
+    
+    <div class="day">
+      <h3>Friday, April 25</h3>
+      <ul class="activities">
+        <li class="adventure"><span class="time">10:00</span> - Explore vineyards and quaint villages</li>
+        <li class="meal"><span class="time">13:00</span> - Wine tasting &amp; gourmet lunch</li>
+      </ul>
+    </div>
+    
+    <div class="day">
+      <h3>Saturday, April 26</h3>
+      <ul class="activities">
+        <li class="adventure"><span class="time">09:00</span> - Guided historical walking tour</li>
+        <li class="meal"><span class="time">12:00</span> - Enjoy traditional Alsace cuisine</li>
+      </ul>
+    </div>
+    
+    <div class="day">
+      <h3>Sunday, April 27</h3>
+      <ul class="activities">
+        <li class="adventure"><span class="time">11:00</span> - Visit a local castle and museum</li>
+        <li class="meal"><span class="time">14:00</span> - Leisure lunch in a village square</li>
+      </ul>
+    </div>
+    
+    <div class="day">
+      <h3>Monday, April 28</h3>
+      <ul class="activities">
+        <li class="adventure"><span class="time">08:00</span> - Scenic drive &amp; market tour</li>
+        <li class="flight"><span class="time">16:00</span> - Depart for Amsterdam</li>
+      </ul>
+    </div>
+    
+    <div class="day">
+      <h3 class="hotel">Hotel</h3>
+      <div class="hotel-details">
+        <div class="hotel-name">Alsace Heritage Inn</div>
+        <div class="hotel-address"><a href="#">Historic Alsace Address</a></div>
+        <div class="hotel-phone">+33 3 1234567</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Amsterdam Content (Second Leg) -->
+<div class="content" id="amsterdam2">
+  <div class="tab-image">
+    <img src="Amsterdam2.png" alt="Amsterdam Evening View">
+    <div class="location-title">Amsterdam, Netherlands</div>
+  </div>
+  
+  <div class="itinerary">
+    <div class="day">
+      <h3>Monday, April 28</h3>
+      <ul class="activities">
+        <li class="flight"><span class="time">Evening</span> - Arrive in Amsterdam and settle in</li>
+      </ul>
+    </div>
+    
+    <div class="day">
+      <h3>Tuesday, April 29</h3>
+      <ul class="activities">
+        <li class="adventure"><span class="time">10:00</span> - Explore art museums and historic districts</li>
+        <li class="meal"><span class="time">13:00</span> - Lunch at a trendy eatery</li>
+        <li class="adventure"><span class="time">16:00</span> - Canal cruise through the city</li>
+      </ul>
+    </div>
+    
+    <div class="day">
+      <h3>Wednesday, April 30</h3>
+      <ul class="activities">
+        <li class="adventure"><span class="time">09:00</span> - Bike tour of parks &amp; markets</li>
+        <li class="meal"><span class="time">12:00</span> - Farewell brunch</li>
+        <li class="flight"><span class="time">15:00</span> - Departure from Amsterdam</li>
+      </ul>
+    </div>
+    
+    <div class="day">
+      <h3 class="hotel">Hotel</h3>
+      <div class="hotel-details">
+        <div class="hotel-name">Amsterdam Boutique Hotel</div>
+        <div class="hotel-address"><a href="#">Amsterdam Central Address</a></div>
+        <div class="hotel-phone">+31 20 7654321</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<footer>
+  <p><strong>Adventure Funding:</strong> Bubi</p>
+  <p><strong>Travel Agent:</strong> Lorie</p>
+  <p><strong>App Developer:</strong> Brian</p>
+  
+  <hr class="footer-divider">
+  
+  <div class="footer-links">
+    <a href="https://briangroth.github.io/4xBingo/" class="footer-link">
+      <i class="fas fa-gamepad"></i> Travel Photo Bingo
+    </a>
+    <a href="feedback.html" class="footer-link">
+      <i class="fas fa-comment"></i> Feedback?
+    </a>
+  </div>
+</footer>
+
+<script>
+  // Tab switching logic
+  const tabs = document.querySelectorAll('.tab');
+  const contents = document.querySelectorAll('.content');
+
+  tabs.forEach(tab => {
+    tab.addEventListener('click', () => {
+      const cityName = tab.dataset.city;
+      
+      tabs.forEach(t => t.classList.remove('active'));
+      contents.forEach(c => c.classList.remove('active'));
+
+      tab.classList.add('active');
+      document.getElementById(tab.dataset.tab).classList.add('active');
+      
+      // Save the active tab preference to localStorage
+      localStorage.setItem('activeTab', tab.dataset.tab);
+    });
+  });
+
+  // Choose the correct default tab based on date or previous selection
+  document.addEventListener('DOMContentLoaded', () => {
+    const savedTab = localStorage.getItem('activeTab');
+    const now = new Date();
+    let defaultTab = "amsterdam1"; // default fallback
+
+    if (now >= new Date("2025-04-24T00:00:00")) {
+      defaultTab = "alsace";
+    }
+    if (now >= new Date("2025-04-28T00:00:00")) {
+      defaultTab = "amsterdam2";
+    }
+
+    const tabToActivate = savedTab || defaultTab;
+    document.querySelector(`.tab[data-tab="${tabToActivate}"]`).click();
+    
+    updateCountdown();
+    setInterval(updateCountdown, 86400000);
+  });
+
+  // Countdown function with updated trip dates
+  function updateCountdown() {
+    const countdownElement = document.getElementById('countdown');
+    if (!countdownElement) return;
+    
+    const tripStart = new Date("2025-04-22T00:00:00");
+    const now = new Date();
+    
+    if (now >= tripStart && now <= new Date("2025-04-30T23:59:59")) {
+      const tripDay = Math.floor((now - tripStart) / (1000 * 60 * 60 * 24)) + 1;
+      countdownElement.innerHTML = `<span style="color:#ff8a65">🎉 Day ${tripDay} of your adventure! 🎉</span>`;
+    } else if (now < tripStart) {
+      const daysToGo = Math.ceil((tripStart - now) / (1000 * 60 * 60 * 24));
+      countdownElement.textContent = `${daysToGo} days until your adventure begins!`;
+    } else {
+      countdownElement.textContent = `Your adventure has concluded!`;
+    }
+  }
+</script>
+</body>
+</html>
