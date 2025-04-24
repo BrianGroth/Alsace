@@ -38,7 +38,7 @@
   <script>
   // ——— Configuration ———
   const cols = 10, rows = 20;
-  const initialDropInterval = 1000; // ms
+  const initialDropInterval = 750; // ms - Made the initial speed faster (was 1000)
   const swipeThreshold = 30; // minimum pixels for a swipe gesture
   const tapThreshold = 10; // maximum pixels for a tap gesture
   const gameoverDisplayDuration = 2000; // ms to show game over state
@@ -130,7 +130,7 @@
       // Check boundaries
       if (x < 0 || x >= cols || y >= rows) return true;
       // Check collision with existing cells (only if y is within bounds)
-      if (y >= 0 && board[y] && board[y][x] !== null) return true;
+      if (y >= 0 && y < rows && board[y] && board[y][x] !== null) return true;
       return false;
     });
   }
@@ -162,7 +162,7 @@
       // Level increases every 10 lines, but caps at 10 (or adjust as needed)
       level = Math.min(10, Math.floor(lines / 10));
       // Increase drop speed, capping at a reasonable speed
-      dropInterval = Math.max(50, initialDropInterval * Math.pow(0.85, level)); // Faster scaling
+      dropInterval = Math.max(50, initialDropInterval * Math.pow(0.8, level)); // Made speed scale faster (was 0.85)
       // Note: Could add a line clear animation here (e.g., temporarily change row color)
     }
   }
