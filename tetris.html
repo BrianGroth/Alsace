@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Emoji France Tetris</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    body {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      background: #f0f0f0;
+      font-family: sans-serif;
+    }
+    #game-container {
+      width: 100%;
+      max-width: 320px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    #info {
+      width: 100%;
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 8px;
+      font-size: 0.9rem;
+      color: #333;
+    }
+    #info span {
+      flex: 1;
+      text-align: center;
+    }
+    #game-canvas {
+      width: 100%;
+      background: #222;
+      touch-action: none;
+    }
+    #controls {
+      margin-top: 10px;
+      width: 100%;
+      display: flex;
+      justify-content: space-between;
+    }
+    #controls button {
+      flex: 1;
+      margin: 0 4px;
+      padding: 10px;
+      font-size: 1.3rem;
+      background: #fff;
+      border: none;
+      border-radius: 4px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+    }
+    #controls button:active {
+      background: #eee;
+    }
+  </style>
+</head>
+<body>
+  <div id="game-container">
+    <div id="info">
+      <span id="score">Score: 0</span>
+      <span id="level">Level: 0</span>
+      <span id="lines">Lines: 0</span>
+    </div>
+    <canvas id="game-canvas"></canvas>
+    <div id="controls">
+      <button id="left-btn">◀️</button>
+      <button id="rotate-btn">🔄</button>
+      <button id="right-btn">▶️</button>
+      <button id="down-btn">🔽</button>
+    </div>
+  </div>
+
+  <script>
+    // --- Configuration ---
+    const cols = 10;
+    const rows = 20;
+    const initialDropInterval = 1000; // ms
+
+    const shapes = {
+      'I': [[0,1],[1,1],[2,1],[3,1]],
+      'J': [[0,0],[0,1],[1,1],[2,1]],
+      'L': [[2,0],[0,1],[1,1],[2,1]],
+      'O': [[1,0],[2,0],[1,1],[2,1]],
+      'S': [[1,0],[2,0],[0,1],[1,1]],
+      'T': [[1,0],[0,1],[1,1],[2,1]],
+      'Z': [[0,0],[1,0],[1,1],[2,1]],
+    };
+
+    const emojis = {
+      'I': '🥖',
+      'J': '🗼',
+      'L': '🚴',
+      'O': '🧀',
+      'S': '🥐',
+      'T': '🍷',
+      'Z': '☕'
+    };
+
+    // --- State ---
+    let grid = [];
+    let piece;
+    let dropCounter = 0;
+    let dropInterval = initialDropInterval;
+    let lastTime = 0;
+    let score = 0, level = 0, lines = 0;
+
+    // --- Canvas setup ---
+    const canvas = document.getElementById('game-canvas');
+    const ctx = canvas.getContext('2d');
+    let cellSize;
+    function resizeCanvas() {
+      const W = document.getElementById('game-container').clientWidth;
+      canvas.width = W;
+      canvas.height = (W / cols) * rows;
+      cellSize = canvas.width / cols;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.font = `${cellSize}px serif`;
+    }
+    window.addEventListener('resize', resizeCanvas);
+    resizeCanvas();
+
+    // --- Helpers ---
+    function createGrid() {
+      grid = Array.from({length: rows}, () => Array(cols).fill(null));
+    }
+    function updateInfo() {
+      document.getElementById('score').textContent = `Score: ${score}`;
+      document.getElementById('level').textContent = `Level: ${level}`;
+      document.getElementById('lines').textContent = `Lines: ${lines}`;
+    }
+    function drawCell(x, y, emoji) {
+      ctx.fillText(emoji, (x + 0.5) * cellSize, (y + 0.5) * cellSize);
+    }
+    function collide(board, p) {
+      for (let [dx, dy] of p.shape) {
+        const x = p.pos.x + dx;
+        const y = p.pos.y + dy;
+        if (x < 0 || x >= cols || y >= rows || (y >= 0 && board[y][x])) {
+          return true;
+        }
+      }
+      return false;
+    }
+    function merge(board, p) {
+      for (let [dx, dy] of p.shape) {
+        const x = p.pos.x + dx;
+        const y = p.pos.y + dy;
+        if (y >= 0) board[y][x] = p.emoji;
+      }
+    }
+    function clearLines() {
+      let cnt = 0;
+      outer: for (let y = rows-1; y >= 0; --y) {
+        if (grid[y].every(cell => cell)) {
+          grid.splice(y, 1);
+          grid.unshift(Array(cols).fill(null));
+          cnt++;
+          y++;
+        }
+      }
+      if (cnt) {
+        lines += cnt;
+        score += cnt * 100;
+        level = Math.floor(lines / 10);
+        dropInterval = initialDropInterval * Math.pow(0.9, level);
+        updateInfo();
+      }
+    }
+    function rotate(shape) {
+      return shape.map(([x, y]) => [y, -x]);
+    }
+
+    // --- Piece management ---
+    function newPiece() {
+      const types = Object.keys(shapes);
+      const type = types[Math.floor(Math.random() * types.length)];
+      piece = {
+        shape: shapes[type].map(c => [...c]),
+        pos: {x: 3, y: -2},
+        emoji: emojis[type]
+      };
+    }
+    function playerDrop() {
+      piece.pos.y++;
+      if (collide(grid, piece)) {
+        piece.pos.y--;
+        merge(grid, piece);
+        clearLines();
+        newPiece();
+        if (collide(grid, piece)) {
+          createGrid();
+          score = lines = level = 0;
+          dropInterval = initialDropInterval;
+          updateInfo();
+        }
+      }
+      dropCounter = 0;
+    }
+    function playerMove(dir) {
+      piece.pos.x += dir;
+      if (collide(grid, piece)) piece.pos.x -= dir;
+    }
+    function playerRotate() {
+      const old = piece.shape;
+      piece.shape = rotate(piece.shape);
+      if (collide(grid, piece)) piece.shape = old;
+    }
+
+    // --- Rendering & loop ---
+    function draw() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      grid.forEach((row, y) =>
+        row.forEach((cell, x) => cell && drawCell(x, y, cell))
+      );
+      piece.shape.forEach(([dx, dy]) =>
+        drawCell(piece.pos.x + dx, piece.pos.y + dy, piece.emoji)
+      );
+    }
+    function update(time = 0) {
+      const delta = time - lastTime;
+      lastTime = time;
+      dropCounter += delta;
+      if (dropCounter > dropInterval) playerDrop();
+      draw();
+      requestAnimationFrame(update);
+    }
+
+    // --- Controls ---
+    document.addEventListener('keydown', e => {
+      if (e.key === 'ArrowLeft') playerMove(-1);
+      if (e.key === 'ArrowRight') playerMove(1);
+      if (e.key === 'ArrowDown') playerDrop();
+      if (e.key === 'ArrowUp') playerRotate();
+    });
+    document.getElementById('left-btn').onclick   = () => playerMove(-1);
+    document.getElementById('right-btn').onclick  = () => playerMove(1);
+    document.getElementById('down-btn').onclick   = () => playerDrop();
+    document.getElementById('rotate-btn').onclick = () => playerRotate();
+
+    // --- Touch handling for mobile ---
+    let sx, sy;
+    canvas.addEventListener('pointerdown', e => {
+      sx = e.clientX; sy = e.clientY;
+    });
+    canvas.addEventListener('pointerup', e => {
+      const dx = e.clientX - sx;
+      const dy = e.clientY - sy;
+      if (Math.abs(dx) > Math.abs(dy)) {
+        if (dx > 20) playerMove(1);
+        else if (dx < -20) playerMove(-1);
+      } else {
+        if (dy > 20) playerDrop();
+        else if (dy < -20) playerRotate();
+      }
+    });
+
+    // --- Start ---
+    createGrid();
+    newPiece();
+    updateInfo();
+    update();
+  </script>
+</body>
+</html>
