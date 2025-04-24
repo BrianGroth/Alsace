@@ -1,304 +1,275 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta charset="UTF-8">
+  <!-- allow full-bleed on iOS and inform it we handle safe-areas -->
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <title>Emoji France Tetris</title>
   <style>
-    /* make the page truly full‐screen and portrait */
     html, body {
       margin: 0; padding: 0;
       width: 100%; height: 100%;
+      background: #000;
+      /* respect the notch/safe-area on iOS */
+      padding: env(safe-area-inset-top) env(safe-area-inset-right)
+               env(safe-area-inset-bottom) env(safe-area-inset-left);
       overflow: hidden;
-      background: #f0f0f0;
-      font-family: sans-serif;
-    }
-    body {
-      display: flex;
-      justify-content: center;
-      align-items: center;
     }
     #game-container {
-      width: 100vw;
-      height: 100vh;
+      position: absolute;
+      top: 0; left: 0; right: 0; bottom: 0;
       display: flex;
-      flex-direction: column;
       align-items: center;
+      justify-content: center;
     }
-    #info {
-      width: 100%;
-      padding: 8px 10px;
-      display: flex;
-      justify-content: space-between;
-      font-size: 1rem;
-      color: #333;
-    }
-    #game-canvas {
+    canvas {
       background: #222;
       touch-action: none;
-      /* no width/height here — we'll set via JS to maintain aspect */
-    }
-    #controls {
-      width: 100%;
-      padding: 8px 10px;
-      display: flex;
-      justify-content: space-between;
-    }
-    #controls button {
-      flex: 1;
-      margin: 0 4px;
-      padding: 10px;
-      font-size: 1.2rem;
-      background: #fff;
-      border: none;
-      border-radius: 4px;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.2);
-    }
-    #controls button:active {
-      background: #eee;
+      /* we'll size it via JS to maintain exactly 10×20 cells */
     }
   </style>
 </head>
 <body>
   <div id="game-container">
-    <div id="info">
-      <span id="score">Score: 0</span>
-      <span id="level">Level: 0</span>
-      <span id="lines">Lines: 0</span>
-    </div>
     <canvas id="game-canvas"></canvas>
-    <div id="controls">
-      <button id="left-btn">◀️</button>
-      <button id="rotate-btn">🔄</button>
-      <button id="right-btn">▶️</button>
-      <button id="down-btn">🔽</button>
-    </div>
   </div>
 
   <script>
-    // --- CONFIG ---
-    const cols = 10, rows = 20;
-    const initialDropInterval = 1000; // ms
+  // ——— Configuration ———
+  const cols = 10, rows = 20;
+  const initialDropInterval = 1000; // ms
+  const shapes = {
+    I: [[0,1],[1,1],[2,1],[3,1]],
+    J: [[0,0],[0,1],[1,1],[2,1]],
+    L: [[2,0],[0,1],[1,1],[2,1]],
+    O: [[1,0],[2,0],[1,1],[2,1]],
+    S: [[1,0],[2,0],[0,1],[1,1]],
+    T: [[1,0],[0,1],[1,1],[2,1]],
+    Z: [[0,0],[1,0],[1,1],[2,1]],
+  };
+  const emojis = {
+    I: '🥖', J: '🗼', L: '🚴',
+    O: '🧀', S: '🥐', T: '🍷', Z: '☕'
+  };
 
-    const shapes = {
-      'I': [[0,1],[1,1],[2,1],[3,1]],
-      'J': [[0,0],[0,1],[1,1],[2,1]],
-      'L': [[2,0],[0,1],[1,1],[2,1]],
-      'O': [[1,0],[2,0],[1,1],[2,1]],
-      'S': [[1,0],[2,0],[0,1],[1,1]],
-      'T': [[1,0],[0,1],[1,1],[2,1]],
-      'Z': [[0,0],[1,0],[1,1],[2,1]],
+  // ——— State ———
+  let grid, piece;
+  let dropCounter = 0;
+  let dropInterval = initialDropInterval;
+  let lastTime = 0;
+  // keep these so we can scale difficulty, even if we don’t display them
+  let lines = 0, level = 0;
+
+  // ——— Canvas & Sizing ———
+  const canvas = document.getElementById('game-canvas');
+  const ctx    = canvas.getContext('2d');
+  let cellSize;
+
+  function resizeCanvas() {
+    // compute usable width/height after safe-area padding
+    const style = getComputedStyle(document.body);
+    const padH = parseFloat(style.paddingLeft) + parseFloat(style.paddingRight);
+    const padV = parseFloat(style.paddingTop)  + parseFloat(style.paddingBottom);
+    const W = window.innerWidth  - padH;
+    const H = window.innerHeight - padV;
+    // pick the largest square cell that fits the 10×20 grid
+    cellSize = Math.floor(Math.min(W/cols, H/rows));
+    canvas.width  = cellSize * cols;
+    canvas.height = cellSize * rows;
+    // ensure it actually draws at that size
+    canvas.style.width  = canvas.width  + 'px';
+    canvas.style.height = canvas.height + 'px';
+
+    ctx.textAlign    = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.font         = cellSize + 'px serif';
+  }
+
+  window.addEventListener('resize', resizeCanvas);
+  window.addEventListener('orientationchange', () => setTimeout(resizeCanvas, 100));
+  resizeCanvas();
+
+  // ——— Fullscreen & Portrait Lock ———
+  let firstTouch = true;
+  function requestFullScreenAndLock() {
+    if (document.documentElement.requestFullscreen) {
+      document.documentElement.requestFullscreen().catch(_=>{});
+    }
+    if (screen.orientation && screen.orientation.lock) {
+      screen.orientation.lock('portrait').catch(_=>{});
+    }
+  }
+
+  // ——— Game Logic Helpers ———
+  function createGrid() {
+    grid = Array.from({length: rows}, () => Array(cols).fill(null));
+  }
+  function collide(board, p) {
+    return p.shape.some(([dx,dy]) => {
+      const x = p.pos.x + dx;
+      const y = p.pos.y + dy;
+      return (
+        x < 0 || x >= cols ||
+        y >= rows ||
+        (y >= 0 && board[y][x])
+      );
+    });
+  }
+  function merge(board, p) {
+    p.shape.forEach(([dx,dy]) => {
+      const x = p.pos.x + dx;
+      const y = p.pos.y + dy;
+      if (y >= 0) board[y][x] = p.emoji;
+    });
+  }
+  function clearLines() {
+    let count = 0;
+    for (let y = rows - 1; y >= 0; --y) {
+      if (grid[y].every(c => c)) {
+        grid.splice(y, 1);
+        grid.unshift(Array(cols).fill(null));
+        count++;
+        y++; // recheck same row index
+      }
+    }
+    if (count > 0) {
+      lines += count;
+      level = Math.floor(lines / 10);
+      dropInterval = initialDropInterval * Math.pow(0.9, level);
+    }
+  }
+  function rotateShape(shape) {
+    return shape.map(([x,y]) => [y, -x]);
+  }
+
+  // ——— Piece Management ———
+  function newPiece() {
+    const types = Object.keys(shapes);
+    const t = types[Math.floor(Math.random() * types.length)];
+    piece = {
+      shape: shapes[t].map(pt => pt.slice()),
+      pos:   { x: 3, y: -2 },
+      emoji: emojis[t]
     };
-    const emojis = {
-      'I': '🥖','J': '🗼','L': '🚴',
-      'O': '🧀','S': '🥐','T': '🍷','Z': '☕'
-    };
+  }
+  function resetGame() {
+    createGrid();
+    lines = level = 0;
+    dropInterval = initialDropInterval;
+    newPiece();
+  }
 
-    // --- STATE ---
-    let grid, piece;
-    let dropCounter = 0, dropInterval = initialDropInterval;
-    let lastTime = 0;
-    let score = 0, level = 0, lines = 0;
-
-    // --- CANVAS SETUP ---
-    const canvas = document.getElementById('game-canvas');
-    const ctx    = canvas.getContext('2d');
-    let cellSize;
-
-    function resizeCanvas() {
-      // fill full height, compute width by 10:20 ratio
-      const H = window.innerHeight;
-      const W = (H / rows) * cols;
-      canvas.height = H;
-      canvas.width  = W;
-      cellSize = W / cols;
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      ctx.font = `${cellSize}px serif`;
-    }
-    window.addEventListener('resize', resizeCanvas);
-    resizeCanvas();
-
-    // --- FULLSCREEN & ORIENTATION LOCK ---
-    let firstInteraction = true;
-    function initFullscreenAndLock() {
-      const el = document.documentElement;
-      if (el.requestFullscreen) {
-        el.requestFullscreen().catch(()=>{/*ignore*/});
-      }
-      if (screen.orientation && screen.orientation.lock) {
-        screen.orientation.lock('portrait').catch(()=>{/*ignore*/});
+  // ——— Player Actions ———
+  function playerDrop() {
+    piece.pos.y++;
+    if (collide(grid, piece)) {
+      piece.pos.y--;
+      merge(grid, piece);
+      clearLines();
+      newPiece();
+      if (collide(grid, piece)) {
+        resetGame();
       }
     }
+    dropCounter = 0;
+  }
+  function playerMove(dir) {
+    piece.pos.x += dir;
+    if (collide(grid, piece)) piece.pos.x -= dir;
+  }
+  function playerRotate() {
+    const oldShape = piece.shape;
+    piece.shape = rotateShape(piece.shape);
+    if (collide(grid, piece)) piece.shape = oldShape;
+  }
 
-    // --- HELPERS ---
-    function createGrid() {
-      grid = Array.from({length: rows}, () => Array(cols).fill(null));
+  // ——— Rendering & Main Loop ———
+  function draw() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    // draw locked cells
+    grid.forEach((row, y) =>
+      row.forEach((cell, x) => {
+        if (cell) ctx.fillText(cell, (x + 0.5) * cellSize, (y + 0.5) * cellSize);
+      })
+    );
+    // draw current piece
+    piece.shape.forEach(([dx,dy]) =>
+      ctx.fillText(piece.emoji,
+        (piece.pos.x + dx + 0.5) * cellSize,
+        (piece.pos.y + dy + 0.5) * cellSize
+      )
+    );
+  }
+  function update(time = 0) {
+    const dt = time - lastTime;
+    lastTime = time;
+    dropCounter += dt;
+    if (dropCounter > dropInterval) {
+      playerDrop();
     }
-    function updateInfo() {
-      document.getElementById('score').textContent = `Score: ${score}`;
-      document.getElementById('level').textContent = `Level: ${level}`;
-      document.getElementById('lines').textContent = `Lines: ${lines}`;
-    }
-    function drawCell(x, y, emoji) {
-      ctx.fillText(emoji, (x + 0.5) * cellSize, (y + 0.5) * cellSize);
-    }
-    function collide(board, p) {
-      for (let [dx,dy] of p.shape) {
-        const x = p.pos.x + dx, y = p.pos.y + dy;
-        if (x<0||x>=cols||y>=rows||(y>=0&&board[y][x])) return true;
-      }
-      return false;
-    }
-    function merge(board, p) {
-      for (let [dx,dy] of p.shape) {
-        const x = p.pos.x + dx, y = p.pos.y + dy;
-        if (y>=0) board[y][x] = p.emoji;
-      }
-    }
-    function clearLines() {
-      let cnt = 0;
-      outer: for (let y = rows-1; y>=0; --y) {
-        if (grid[y].every(c=>c)) {
-          grid.splice(y,1);
-          grid.unshift(Array(cols).fill(null));
-          cnt++; y++;
-        }
-      }
-      if (cnt) {
-        lines += cnt;
-        score += cnt * 100;
-        level = Math.floor(lines/10);
-        dropInterval = initialDropInterval * Math.pow(0.9, level);
-        updateInfo();
-      }
-    }
-    function rotate(shape) {
-      return shape.map(([x,y]) => [y, -x]);
-    }
+    draw();
+    requestAnimationFrame(update);
+  }
 
-    // --- PIECE MGMT ---
-    function newPiece() {
-      const types = Object.keys(shapes);
-      const t = types[Math.floor(Math.random()*types.length)];
-      piece = {
-        shape: shapes[t].map(c=>[...c]),
-        pos:   {x: 3, y: -2},
-        emoji: emojis[t]
-      };
+  // ——— Input: Touch / Tap / Swipe ———
+  let sx = 0, sy = 0;
+  canvas.addEventListener('pointerdown', e => {
+    if (firstTouch) {
+      requestFullScreenAndLock();
+      firstTouch = false;
     }
-    function playerDrop() {
-      piece.pos.y++;
-      if (collide(grid,piece)) {
+    sx = e.clientX;
+    sy = e.clientY;
+  });
+  canvas.addEventListener('pointerup', e => {
+    const dx = e.clientX - sx;
+    const dy = e.clientY - sy;
+    const adx = Math.abs(dx), ady = Math.abs(dy);
+    const rect = canvas.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+
+    // Tap (little movement): left/right/hard drop
+    if (adx < 10 && ady < 10) {
+      if (y > canvas.height * 0.7) {
+        // hard drop
+        while (!collide(grid, piece)) piece.pos.y++;
         piece.pos.y--;
-        merge(grid,piece);
+        merge(grid, piece);
         clearLines();
         newPiece();
-        if (collide(grid,piece)) {
-          createGrid();
-          score = lines = level = 0;
-          dropInterval = initialDropInterval;
-          updateInfo();
-        }
-      }
-      dropCounter = 0;
-    }
-    function playerMove(dir) {
-      piece.pos.x += dir;
-      if (collide(grid,piece)) piece.pos.x -= dir;
-    }
-    function playerRotate() {
-      const old = piece.shape;
-      piece.shape = rotate(piece.shape);
-      if (collide(grid,piece)) piece.shape = old;
-    }
-
-    // --- RENDER & LOOP ---
-    function draw() {
-      ctx.clearRect(0,0,canvas.width,canvas.height);
-      grid.forEach((row,y) =>
-        row.forEach((c,x) => c && drawCell(x,y,c))
-      );
-      piece.shape.forEach(([dx,dy]) =>
-        drawCell(piece.pos.x+dx, piece.pos.y+dy, piece.emoji)
-      );
-    }
-    function update(time=0) {
-      const delta = time - lastTime;
-      lastTime = time;
-      dropCounter += delta;
-      if (dropCounter > dropInterval) playerDrop();
-      draw();
-      requestAnimationFrame(update);
-    }
-
-    // --- CONTROLS: KEYBOARD & BUTTONS ---
-    document.addEventListener('keydown', e => {
-      if (e.key==='ArrowLeft')  playerMove(-1);
-      if (e.key==='ArrowRight') playerMove(1);
-      if (e.key==='ArrowDown')  playerDrop();
-      if (e.key==='ArrowUp')    playerRotate();
-    });
-    document.getElementById('left-btn').onclick   = ()=>playerMove(-1);
-    document.getElementById('right-btn').onclick  = ()=>playerMove(1);
-    document.getElementById('down-btn').onclick   = ()=>playerDrop();
-    document.getElementById('rotate-btn').onclick = ()=>playerRotate();
-
-    // --- TOUCH / TAP / SWIPE on CANVAS ---
-    let sx=0, sy=0;
-    canvas.addEventListener('pointerdown', e => {
-      if (firstInteraction) {
-        initFullscreenAndLock();
-        firstInteraction = false;
-      }
-      sx = e.clientX; sy = e.clientY;
-    });
-    canvas.addEventListener('pointerup', e => {
-      const dx = e.clientX - sx, dy = e.clientY - sy;
-      const absDx = Math.abs(dx), absDy = Math.abs(dy);
-      // get tap pos relative to canvas
-      const rect = canvas.getBoundingClientRect();
-      const x = e.clientX - rect.left;
-      const y = e.clientY - rect.top;
-
-      // TAP (small movement): left/right/hard drop
-      if (absDx < 10 && absDy < 10) {
-        if (y > canvas.height * 0.7) {
-          // hard drop
-          while (!collide(grid,piece)) piece.pos.y++;
-          piece.pos.y--;
-          merge(grid,piece);
-          clearLines();
-          newPiece();
-          if (collide(grid,piece)) {
-            createGrid();
-            score = lines = level = 0;
-            dropInterval = initialDropInterval;
-            updateInfo();
-          }
-        } else if (x < canvas.width/2) {
-          playerMove(-1);
-        } else {
-          playerMove(1);
-        }
-        return;
-      }
-
-      // SWIPE: horizontal = move, vertical = drop/rotate
-      if (absDx > absDy) {
-        if (dx > 20)  playerMove(1);
-        if (dx < -20) playerMove(-1);
+        if (collide(grid, piece)) resetGame();
+      } else if (x < canvas.width / 2) {
+        playerMove(-1);
       } else {
-        if (dy > 20)  playerDrop();
-        if (dy < -20) playerRotate();
+        playerMove(1);
       }
-    });
+      return;
+    }
 
-    // --- START ---
-    createGrid();
-    newPiece();
-    updateInfo();
-    update();
+    // Swipe: horiz → move, vert → drop/rotate
+    if (adx > ady) {
+      if (dx > 20) playerMove(1);
+      if (dx < -20) playerMove(-1);
+    } else {
+      if (dy > 20)      playerDrop();
+      else if (dy < -20) playerRotate();
+    }
+  });
+
+  // ——— Keyboard (fallback) ———
+  document.addEventListener('keydown', e => {
+    if (e.key === 'ArrowLeft')  playerMove(-1);
+    if (e.key === 'ArrowRight') playerMove(1);
+    if (e.key === 'ArrowDown')  playerDrop();
+    if (e.key === 'ArrowUp')    playerRotate();
+  });
+
+  // ——— Start everything ———
+  resetGame();
+  update();
   </script>
 </body>
 </html>
