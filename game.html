@@ -1,1 +1,453 @@
-blank
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <title>Emoji France Tetris</title>
+  <style>
+    html, body {
+      margin: 0; padding: 0;
+      width: 100%; height: 100%;
+      background: #000;
+      /* respect the notch/safe-area on iOS */
+      padding: env(safe-area-inset-top) env(safe-area-inset-right)
+               env(safe-area-inset-bottom) env(safe-area-inset-left);
+      overflow: hidden;
+    }
+    #game-container {
+      position: absolute;
+      top: 0; left: 0; right: 0; bottom: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    canvas {
+      background: #222;
+      touch-action: none; /* Prevent default touch behaviors like scrolling/zooming */
+      /* we'll size it via JS to maintain exactly 10×20 cells */
+    }
+  </style>
+</head>
+<body>
+  <div id="game-container">
+    <canvas id="game-canvas"></canvas>
+  </div>
+
+  <script>
+  // ——— Configuration ———
+  const cols = 10, rows = 20;
+  const initialDropInterval = 1000; // ms
+  const swipeThreshold = 30; // minimum pixels for a swipe gesture
+  const tapThreshold = 10; // maximum pixels for a tap gesture
+  const gameoverDisplayDuration = 2000; // ms to show game over state
+
+  const shapes = {
+    I: [[0,1],[1,1],[2,1],[3,1]],
+    J: [[0,0],[0,1],[1,1],[2,1]],
+    L: [[2,0],[0,1],[1,1],[2,1]],
+    O: [[1,0],[2,0],[1,1],[2,1]],
+    S: [[1,0],[2,0],[0,1],[1,1]],
+    T: [[1,0],[0,1],[1,1],[2,1]],
+    Z: [[0,0],[1,0],[1,1],[2,1]],
+  };
+  // French-inspired emojis
+  const emojis = {
+    I: '🥖', // Baguette
+    J: '🗼', // Eiffel Tower
+    L: '🚴', // Cyclist (Tour de France)
+    O: '🧀', // Cheese
+    S: '🥐', // Croissant
+    T: '🍷', // Wine Glass
+    Z: '☕'  // Coffee/Cafe
+  };
+  const ghostEmoji = '⚪'; // A neutral emoji for the ghost piece
+
+  // ——— State ———
+  let grid, piece;
+  let dropCounter = 0;
+  let dropInterval = initialDropInterval;
+  let lastTime = 0;
+  let lines = 0, level = 0; // tracked but not displayed
+  let isGameOver = false;
+  let gameOverTimer = 0;
+
+  // ——— Canvas & Sizing ———
+  const canvas = document.getElementById('game-canvas');
+  const ctx    = canvas.getContext('2d');
+  let cellSize;
+
+  function resizeCanvas() {
+    // compute usable width/height after safe-area padding
+    const style = getComputedStyle(document.body);
+    const padH = parseFloat(style.paddingLeft) + parseFloat(style.paddingRight);
+    const padV = parseFloat(style.paddingTop)  + parseFloat(style.paddingBottom);
+    const W = window.innerWidth  - padH;
+    const H = window.innerHeight - padV;
+    // pick the largest square cell that fits the 10×20 grid
+    cellSize = Math.floor(Math.min(W/cols, H/rows));
+    canvas.width  = cellSize * cols;
+    canvas.height = cellSize * rows;
+    // ensure it actually draws at that size
+    canvas.style.width  = canvas.width  + 'px';
+    canvas.style.height = canvas.height + 'px';
+
+    // Adjust font size to fit the emoji roughly within the cell
+    ctx.font = (cellSize * 0.9) + 'px sans-serif'; // Use a simple font like sans-serif
+    ctx.textAlign    = 'center';
+    ctx.textBaseline = 'middle';
+  }
+
+  window.addEventListener('resize', resizeCanvas);
+  window.addEventListener('orientationchange', () => setTimeout(resizeCanvas, 100));
+  resizeCanvas();
+
+  // ——— Fullscreen & Portrait Lock ———
+  let firstTouch = true;
+  function requestFullScreenAndLock() {
+    // Only attempt if supported and not already fullscreen/locked
+    if (!document.fullscreenElement) {
+       if (document.documentElement.requestFullscreen) {
+        document.documentElement.requestFullscreen().catch(_=>{});
+      } else if (document.documentElement.webkitRequestFullscreen) { // Safari
+        document.documentElement.webkitRequestFullscreen().catch(_=>{});
+      }
+    }
+    if (screen.orientation && screen.orientation.lock && screen.orientation.type.indexOf('portrait') === -1) {
+      screen.orientation.lock('portrait').catch(_=>{});
+    }
+  }
+
+  // ——— Game Logic Helpers ———
+  function createGrid() {
+    grid = Array.from({length: rows}, () => Array(cols).fill(null));
+  }
+  function collide(board, p) {
+    return p.shape.some(([dx,dy]) => {
+      const x = p.pos.x + dx;
+      const y = p.pos.y + dy;
+      // Check boundaries
+      if (x < 0 || x >= cols || y >= rows) return true;
+      // Check collision with existing cells (only if y is within bounds)
+      if (y >= 0 && board[y] && board[y][x] !== null) return true;
+      return false;
+    });
+  }
+  function merge(board, p) {
+    p.shape.forEach(([dx,dy]) => {
+      const x = p.pos.x + dx;
+      const y = p.pos.y + dy;
+      // Ensure we only merge within the visible grid
+      if (y >= 0 && y < rows && x >= 0 && x < cols) board[y][x] = p.emoji;
+    });
+  }
+  function clearLines() {
+    let count = 0;
+    // Iterate from bottom up
+    for (let y = rows - 1; y >= 0; --y) {
+      // Check if the row is full
+      if (grid[y].every(c => c !== null)) {
+        // Remove the full row
+        grid.splice(y, 1);
+        // Add a new empty row at the top
+        grid.unshift(Array(cols).fill(null));
+        count++;
+        // Adjust index to recheck the new row at this position (which was the row above the cleared one)
+        y++;
+      }
+    }
+    if (count > 0) {
+      lines += count;
+      // Level increases every 10 lines, but caps at 10 (or adjust as needed)
+      level = Math.min(10, Math.floor(lines / 10));
+      // Increase drop speed, capping at a reasonable speed
+      dropInterval = Math.max(50, initialDropInterval * Math.pow(0.85, level)); // Faster scaling
+      // Note: Could add a line clear animation here (e.g., temporarily change row color)
+    }
+  }
+   // Simple 90-degree clockwise rotation
+  function rotateShape(shape) {
+    // Find min/max x/y for bounding box
+    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+    shape.forEach(([x,y]) => {
+      minX = Math.min(minX, x); minY = Math.min(minY, y);
+      maxX = Math.max(maxX, x); maxY = Math.max(maxY, y);
+    });
+
+    const pivotX = (minX + maxX) / 2;
+    const pivotY = (minY + maxY) / 2;
+
+    return shape.map(([x,y]) => {
+      // Translate so pivot is origin
+      const translatedX = x - pivotX;
+      const translatedY = y - pivotY;
+      // Rotate 90 deg clockwise (x, y) -> (y, -x)
+      const rotatedX = translatedY;
+      const rotatedY = -translatedX;
+      // Translate back
+      return [Math.round(rotatedX + pivotX), Math.round(rotatedY + pivotY)];
+    });
+  }
+
+
+  // ——— Piece Management ———
+  function newPiece() {
+    const types = Object.keys(shapes);
+    const t = types[Math.floor(Math.random() * types.length)];
+    piece = {
+      shape: shapes[t].map(pt => pt.slice()),
+      pos:   { x: Math.floor(cols / 2) - 1, y: -2 }, // Start higher up
+      emoji: emojis[t]
+    };
+
+    // Check for immediate collision (game over)
+    if (collide(grid, piece)) {
+      isGameOver = true;
+      gameOverTimer = gameoverDisplayDuration;
+    }
+  }
+  function resetGame() {
+    createGrid();
+    lines = level = 0;
+    dropInterval = initialDropInterval;
+    isGameOver = false;
+    gameOverTimer = 0;
+    newPiece(); // Get the first piece
+  }
+
+  // ——— Player Actions ———
+  function playerDrop() {
+    if (isGameOver) return;
+    piece.pos.y++;
+    if (collide(grid, piece)) {
+      piece.pos.y--; // Revert to the last valid position
+      merge(grid, piece);
+      clearLines();
+      newPiece(); // Get the next piece
+    }
+    dropCounter = 0; // Reset drop counter after manual drop
+  }
+
+  function playerHardDrop() {
+     if (isGameOver) return;
+     // Calculate final drop position
+     let finalY = piece.pos.y;
+     while (!collide(grid, {...piece, pos: {x: piece.pos.x, y: finalY + 1}})) {
+         finalY++;
+     }
+     piece.pos.y = finalY; // Instantly move piece down
+     merge(grid, piece);
+     clearLines();
+     newPiece();
+  }
+
+  function playerMove(dir) {
+    if (isGameOver) return;
+    const originalX = piece.pos.x;
+    piece.pos.x += dir;
+    if (collide(grid, piece)) piece.pos.x = originalX; // Revert if collision
+  }
+
+  function playerRotate() {
+    if (isGameOver) return;
+    const originalShape = piece.shape;
+    const originalX = piece.pos.x;
+    piece.shape = rotateShape(piece.shape);
+
+    // Basic wall kick (attempt to shift piece if rotation collides)
+    const offsets = [0, -1, 1, -2, 2]; // Test shifts
+    let rotated = false;
+    for(let offset of offsets) {
+        piece.pos.x = originalX + offset;
+        if (!collide(grid, piece)) {
+            rotated = true;
+            break;
+        }
+    }
+
+    if (!rotated) {
+       piece.shape = originalShape; // Revert shape if rotation+kicks fail
+       piece.pos.x = originalX; // Revert position
+    }
+  }
+
+  // ——— Rendering & Main Loop ———
+  function drawCell(x, y, emoji, alpha = 1.0) {
+      if (y < 0) return; // Don't draw cells above the grid
+      ctx.globalAlpha = alpha;
+      ctx.fillText(emoji, (x + 0.5) * cellSize, (y + 0.5) * cellSize);
+      ctx.globalAlpha = 1.0; // Reset alpha
+  }
+
+  function drawGrid() {
+     grid.forEach((row, y) =>
+       row.forEach((cell, x) => {
+         if (cell) drawCell(x, y, cell);
+       })
+     );
+  }
+
+  function drawPiece(p, alpha = 1.0) {
+     p.shape.forEach(([dx,dy]) =>
+       drawCell(p.pos.x + dx, p.pos.y + dy, p.emoji, alpha)
+     );
+  }
+
+  function drawGhostPiece() {
+      if (!piece || isGameOver) return;
+      // Calculate the ghost piece's final position
+      let ghostY = piece.pos.y;
+      while (!collide(grid, {...piece, pos: {x: piece.pos.x, y: ghostY + 1}})) {
+          ghostY++;
+      }
+
+      // Draw the ghost piece faintly
+      piece.shape.forEach(([dx,dy]) => {
+          drawCell(piece.pos.x + dx, ghostY + dy, ghostEmoji, 0.3); // Draw with transparency
+      });
+  }
+
+  function drawGameOver() {
+      if (!isGameOver) return;
+
+      // Simple visual: fill the screen with a red tint or specific emoji pattern
+      // For "no text", maybe flash the grid with a special emoji or color.
+      // Let's fill the grid with a simple pattern or just a solid visual cue.
+      // Since we need to reset, a brief solid color/emoji flash is simplest.
+      const progress = gameOverTimer / gameoverDisplayDuration;
+      const alpha = Math.sin(progress * Math.PI); // Fade in and out
+
+      ctx.globalAlpha = alpha * 0.8; // Apply transparency
+      ctx.fillStyle = '#f00'; // Red tint
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.globalAlpha = 1.0; // Reset alpha
+
+      // Could also draw a specific emoji pattern here if preferred
+      // For instance:
+      // for(let y=0; y<rows; y++) {
+      //     for(let x=0; x<cols; x++) {
+      //         drawCell(x, y, '💀', alpha); // Skulls or similar visual cue
+      //     }
+      // }
+
+  }
+
+
+  function draw() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height); // Clear previous frame
+    // Draw grid background or borders if desired here
+
+    drawGrid();
+    drawGhostPiece(); // Draw ghost piece before current piece
+    if (piece && !isGameOver) {
+        drawPiece(piece);
+    }
+
+    drawGameOver(); // Draw game over visual if active
+  }
+
+  function update(time = 0) {
+    const dt = time - lastTime;
+    lastTime = time;
+
+    if (isGameOver) {
+        gameOverTimer -= dt;
+        if (gameOverTimer <= 0) {
+            resetGame(); // Reset after the visual cue
+        }
+    } else {
+        dropCounter += dt;
+        if (dropCounter > dropInterval) {
+          playerDrop(); // Automatic drop
+        }
+    }
+
+    draw(); // Draw the current state
+    requestAnimationFrame(update); // Loop
+  }
+
+  // ——— Input: Touch / Tap / Swipe ———
+  let sx = 0, sy = 0;
+  let isDragging = false;
+  canvas.addEventListener('pointerdown', e => {
+    if (firstTouch) {
+      requestFullScreenAndLock();
+      firstTouch = false;
+    }
+    isDragging = true;
+    sx = e.clientX;
+    sy = e.clientY;
+     // Prevent multi-touch issues for this simple example
+    if (e.touches && e.touches.length > 1) {
+        isDragging = false; // Ignore multi-touch for simplicity
+        return;
+    }
+  });
+
+  canvas.addEventListener('pointermove', e => {
+      if (!isDragging) return;
+      // Implement drag detection and potential continuous movement here if desired
+      // For now, movement is only on pointerup based on total swipe distance
+  });
+
+  canvas.addEventListener('pointerup', e => {
+    if (!isDragging) return;
+    isDragging = false;
+
+    const dx = e.clientX - sx;
+    const dy = e.clientY - sy;
+    const adx = Math.abs(dx);
+    const ady = Math.abs(dy);
+
+    const rect = canvas.getBoundingClientRect();
+    const touchY = e.clientY - rect.top;
+
+    // Determine if it was a tap or a swipe
+    if (adx < tapThreshold && ady < tapThreshold) {
+      // It's a tap
+      // Tap on bottom half for hard drop
+      if (touchY > canvas.height * 0.5) {
+         playerHardDrop();
+      }
+      // Tap on top half? Maybe for rotate? Or ignore?
+      // Let's make tap on top half rotate for simplicity
+      else {
+          playerRotate();
+      }
+    } else {
+      // It's a swipe
+      if (adx > ady && adx > swipeThreshold) {
+        // Horizontal swipe
+        if (dx > 0) playerMove(1);  // Swipe right
+        else        playerMove(-1); // Swipe left
+      } else if (ady > adx && ady > swipeThreshold) {
+        // Vertical swipe
+        if (dy > 0) playerDrop();   // Swipe down (soft drop)
+        else        playerRotate(); // Swipe up
+      }
+    }
+  });
+
+   // Handle pointer cancel (e.g., touch moved off screen)
+  canvas.addEventListener('pointercancel', () => {
+    isDragging = false;
+  });
+
+
+  // ——— Keyboard (fallback) ———
+  document.addEventListener('keydown', e => {
+    if (isGameOver) return;
+    if (e.key === 'ArrowLeft')  playerMove(-1);
+    if (e.key === 'ArrowRight') playerMove(1);
+    if (e.key === 'ArrowDown')  playerDrop(); // Soft drop on down arrow
+    if (e.key === 'ArrowUp')    playerRotate();
+    if (e.key === ' ')          playerHardDrop(); // Space bar for hard drop
+  });
+
+  // ——— Start everything ———
+  resetGame();
+  update();
+  </script>
+</body>
+</html>
