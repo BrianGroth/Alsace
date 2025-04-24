@@ -5,46 +5,42 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Emoji France Tetris</title>
   <style>
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
-    body {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      height: 100vh;
+    /* make the page truly full‐screen and portrait */
+    html, body {
+      margin: 0; padding: 0;
+      width: 100%; height: 100%;
+      overflow: hidden;
       background: #f0f0f0;
       font-family: sans-serif;
     }
+    body {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
     #game-container {
-      width: 100%;
-      max-width: 320px;
+      width: 100vw;
+      height: 100vh;
       display: flex;
       flex-direction: column;
       align-items: center;
     }
     #info {
       width: 100%;
+      padding: 8px 10px;
       display: flex;
       justify-content: space-between;
-      margin-bottom: 8px;
-      font-size: 0.9rem;
+      font-size: 1rem;
       color: #333;
     }
-    #info span {
-      flex: 1;
-      text-align: center;
-    }
     #game-canvas {
-      width: 100%;
       background: #222;
       touch-action: none;
+      /* no width/height here — we'll set via JS to maintain aspect */
     }
     #controls {
-      margin-top: 10px;
       width: 100%;
+      padding: 8px 10px;
       display: flex;
       justify-content: space-between;
     }
@@ -52,7 +48,7 @@
       flex: 1;
       margin: 0 4px;
       padding: 10px;
-      font-size: 1.3rem;
+      font-size: 1.2rem;
       background: #fff;
       border: none;
       border-radius: 4px;
@@ -80,9 +76,8 @@
   </div>
 
   <script>
-    // --- Configuration ---
-    const cols = 10;
-    const rows = 20;
+    // --- CONFIG ---
+    const cols = 10, rows = 20;
     const initialDropInterval = 1000; // ms
 
     const shapes = {
@@ -94,34 +89,29 @@
       'T': [[1,0],[0,1],[1,1],[2,1]],
       'Z': [[0,0],[1,0],[1,1],[2,1]],
     };
-
     const emojis = {
-      'I': '🥖',
-      'J': '🗼',
-      'L': '🚴',
-      'O': '🧀',
-      'S': '🥐',
-      'T': '🍷',
-      'Z': '☕'
+      'I': '🥖','J': '🗼','L': '🚴',
+      'O': '🧀','S': '🥐','T': '🍷','Z': '☕'
     };
 
-    // --- State ---
-    let grid = [];
-    let piece;
-    let dropCounter = 0;
-    let dropInterval = initialDropInterval;
+    // --- STATE ---
+    let grid, piece;
+    let dropCounter = 0, dropInterval = initialDropInterval;
     let lastTime = 0;
     let score = 0, level = 0, lines = 0;
 
-    // --- Canvas setup ---
+    // --- CANVAS SETUP ---
     const canvas = document.getElementById('game-canvas');
-    const ctx = canvas.getContext('2d');
+    const ctx    = canvas.getContext('2d');
     let cellSize;
+
     function resizeCanvas() {
-      const W = document.getElementById('game-container').clientWidth;
-      canvas.width = W;
-      canvas.height = (W / cols) * rows;
-      cellSize = canvas.width / cols;
+      // fill full height, compute width by 10:20 ratio
+      const H = window.innerHeight;
+      const W = (H / rows) * cols;
+      canvas.height = H;
+      canvas.width  = W;
+      cellSize = W / cols;
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
       ctx.font = `${cellSize}px serif`;
@@ -129,7 +119,19 @@
     window.addEventListener('resize', resizeCanvas);
     resizeCanvas();
 
-    // --- Helpers ---
+    // --- FULLSCREEN & ORIENTATION LOCK ---
+    let firstInteraction = true;
+    function initFullscreenAndLock() {
+      const el = document.documentElement;
+      if (el.requestFullscreen) {
+        el.requestFullscreen().catch(()=>{/*ignore*/});
+      }
+      if (screen.orientation && screen.orientation.lock) {
+        screen.orientation.lock('portrait').catch(()=>{/*ignore*/});
+      }
+    }
+
+    // --- HELPERS ---
     function createGrid() {
       grid = Array.from({length: rows}, () => Array(cols).fill(null));
     }
@@ -142,62 +144,57 @@
       ctx.fillText(emoji, (x + 0.5) * cellSize, (y + 0.5) * cellSize);
     }
     function collide(board, p) {
-      for (let [dx, dy] of p.shape) {
-        const x = p.pos.x + dx;
-        const y = p.pos.y + dy;
-        if (x < 0 || x >= cols || y >= rows || (y >= 0 && board[y][x])) {
-          return true;
-        }
+      for (let [dx,dy] of p.shape) {
+        const x = p.pos.x + dx, y = p.pos.y + dy;
+        if (x<0||x>=cols||y>=rows||(y>=0&&board[y][x])) return true;
       }
       return false;
     }
     function merge(board, p) {
-      for (let [dx, dy] of p.shape) {
-        const x = p.pos.x + dx;
-        const y = p.pos.y + dy;
-        if (y >= 0) board[y][x] = p.emoji;
+      for (let [dx,dy] of p.shape) {
+        const x = p.pos.x + dx, y = p.pos.y + dy;
+        if (y>=0) board[y][x] = p.emoji;
       }
     }
     function clearLines() {
       let cnt = 0;
-      outer: for (let y = rows-1; y >= 0; --y) {
-        if (grid[y].every(cell => cell)) {
-          grid.splice(y, 1);
+      outer: for (let y = rows-1; y>=0; --y) {
+        if (grid[y].every(c=>c)) {
+          grid.splice(y,1);
           grid.unshift(Array(cols).fill(null));
-          cnt++;
-          y++;
+          cnt++; y++;
         }
       }
       if (cnt) {
         lines += cnt;
         score += cnt * 100;
-        level = Math.floor(lines / 10);
+        level = Math.floor(lines/10);
         dropInterval = initialDropInterval * Math.pow(0.9, level);
         updateInfo();
       }
     }
     function rotate(shape) {
-      return shape.map(([x, y]) => [y, -x]);
+      return shape.map(([x,y]) => [y, -x]);
     }
 
-    // --- Piece management ---
+    // --- PIECE MGMT ---
     function newPiece() {
       const types = Object.keys(shapes);
-      const type = types[Math.floor(Math.random() * types.length)];
+      const t = types[Math.floor(Math.random()*types.length)];
       piece = {
-        shape: shapes[type].map(c => [...c]),
-        pos: {x: 3, y: -2},
-        emoji: emojis[type]
+        shape: shapes[t].map(c=>[...c]),
+        pos:   {x: 3, y: -2},
+        emoji: emojis[t]
       };
     }
     function playerDrop() {
       piece.pos.y++;
-      if (collide(grid, piece)) {
+      if (collide(grid,piece)) {
         piece.pos.y--;
-        merge(grid, piece);
+        merge(grid,piece);
         clearLines();
         newPiece();
-        if (collide(grid, piece)) {
+        if (collide(grid,piece)) {
           createGrid();
           score = lines = level = 0;
           dropInterval = initialDropInterval;
@@ -208,25 +205,25 @@
     }
     function playerMove(dir) {
       piece.pos.x += dir;
-      if (collide(grid, piece)) piece.pos.x -= dir;
+      if (collide(grid,piece)) piece.pos.x -= dir;
     }
     function playerRotate() {
       const old = piece.shape;
       piece.shape = rotate(piece.shape);
-      if (collide(grid, piece)) piece.shape = old;
+      if (collide(grid,piece)) piece.shape = old;
     }
 
-    // --- Rendering & loop ---
+    // --- RENDER & LOOP ---
     function draw() {
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      grid.forEach((row, y) =>
-        row.forEach((cell, x) => cell && drawCell(x, y, cell))
+      ctx.clearRect(0,0,canvas.width,canvas.height);
+      grid.forEach((row,y) =>
+        row.forEach((c,x) => c && drawCell(x,y,c))
       );
-      piece.shape.forEach(([dx, dy]) =>
-        drawCell(piece.pos.x + dx, piece.pos.y + dy, piece.emoji)
+      piece.shape.forEach(([dx,dy]) =>
+        drawCell(piece.pos.x+dx, piece.pos.y+dy, piece.emoji)
       );
     }
-    function update(time = 0) {
+    function update(time=0) {
       const delta = time - lastTime;
       lastTime = time;
       dropCounter += delta;
@@ -235,36 +232,69 @@
       requestAnimationFrame(update);
     }
 
-    // --- Controls ---
+    // --- CONTROLS: KEYBOARD & BUTTONS ---
     document.addEventListener('keydown', e => {
-      if (e.key === 'ArrowLeft') playerMove(-1);
-      if (e.key === 'ArrowRight') playerMove(1);
-      if (e.key === 'ArrowDown') playerDrop();
-      if (e.key === 'ArrowUp') playerRotate();
+      if (e.key==='ArrowLeft')  playerMove(-1);
+      if (e.key==='ArrowRight') playerMove(1);
+      if (e.key==='ArrowDown')  playerDrop();
+      if (e.key==='ArrowUp')    playerRotate();
     });
-    document.getElementById('left-btn').onclick   = () => playerMove(-1);
-    document.getElementById('right-btn').onclick  = () => playerMove(1);
-    document.getElementById('down-btn').onclick   = () => playerDrop();
-    document.getElementById('rotate-btn').onclick = () => playerRotate();
+    document.getElementById('left-btn').onclick   = ()=>playerMove(-1);
+    document.getElementById('right-btn').onclick  = ()=>playerMove(1);
+    document.getElementById('down-btn').onclick   = ()=>playerDrop();
+    document.getElementById('rotate-btn').onclick = ()=>playerRotate();
 
-    // --- Touch handling for mobile ---
-    let sx, sy;
+    // --- TOUCH / TAP / SWIPE on CANVAS ---
+    let sx=0, sy=0;
     canvas.addEventListener('pointerdown', e => {
+      if (firstInteraction) {
+        initFullscreenAndLock();
+        firstInteraction = false;
+      }
       sx = e.clientX; sy = e.clientY;
     });
     canvas.addEventListener('pointerup', e => {
-      const dx = e.clientX - sx;
-      const dy = e.clientY - sy;
-      if (Math.abs(dx) > Math.abs(dy)) {
-        if (dx > 20) playerMove(1);
-        else if (dx < -20) playerMove(-1);
+      const dx = e.clientX - sx, dy = e.clientY - sy;
+      const absDx = Math.abs(dx), absDy = Math.abs(dy);
+      // get tap pos relative to canvas
+      const rect = canvas.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
+
+      // TAP (small movement): left/right/hard drop
+      if (absDx < 10 && absDy < 10) {
+        if (y > canvas.height * 0.7) {
+          // hard drop
+          while (!collide(grid,piece)) piece.pos.y++;
+          piece.pos.y--;
+          merge(grid,piece);
+          clearLines();
+          newPiece();
+          if (collide(grid,piece)) {
+            createGrid();
+            score = lines = level = 0;
+            dropInterval = initialDropInterval;
+            updateInfo();
+          }
+        } else if (x < canvas.width/2) {
+          playerMove(-1);
+        } else {
+          playerMove(1);
+        }
+        return;
+      }
+
+      // SWIPE: horizontal = move, vertical = drop/rotate
+      if (absDx > absDy) {
+        if (dx > 20)  playerMove(1);
+        if (dx < -20) playerMove(-1);
       } else {
-        if (dy > 20) playerDrop();
-        else if (dy < -20) playerRotate();
+        if (dy > 20)  playerDrop();
+        if (dy < -20) playerRotate();
       }
     });
 
-    // --- Start ---
+    // --- START ---
     createGrid();
     newPiece();
     updateInfo();
